@@ -1,7 +1,7 @@
 var express = require('express')
 var cors = require('cors')
 var app = express()
-app.use(cors())
+app.use(cors()) // ทำให้ web server ใช้ได้
 var bodyParser = require('body-parser')
 var jsonParser = bodyParser.json() // แทรกหลัง part api
 const bcrypt = require('bcrypt')//ไว้เข้ารหัส password
@@ -18,8 +18,6 @@ const connection = mysql.createConnection({
   user: 'root',
   database: 'user_db'
 });
-
-
 app.post('/register',jsonParser, function (req, res, next) {
   bcrypt.hash(req.body.password, saltRounds, function(err, hash) {
     connection.query(
@@ -69,6 +67,101 @@ app.post('/login',jsonParser, function (req, res, next) {
   //ใช้ json web token ในการยืนยันตัว
 
 })
+//select
+app.get('/user', function(req, res) { 
+  connection.query(
+    'SELECT * FROM `user`' ,
+    function(err, results, fields) {
+      console.log(results);
+        if(err){res.json({status:'error',message:err}); return }
+        if(results.length === 0){res.json({message : 'data not found'}); return }
+        res.send(results);
+      }  
+  );
+})
+app.get('/shop', function(req, res) { 
+  connection.query(
+    'SELECT * FROM `shop`' ,
+    function(err, results, fields) {
+      console.log(results);
+        if(err){res.json({status:'error',message:err}); return }
+        if(results.length === 0){res.json({message : 'data not found'}); return }
+        res.send(results);
+      }  
+  );
+})
+app.get('/getuserbyid/:id', function(req, res) { 
+  const id = req.params.id;
+  connection.query(
+    'SELECT * FROM `user` WHERE user_id = ?' ,id,
+    function(err, results, fields) {
+      console.log(results);
+        if(err){res.json({status:'error',message:err}); return }
+        if(results.length === 0){res.json({message : 'data not found'}); return }
+        else{
+          res.json({status:'success',user:results})
+          return
+      }
+      }  
+  );
+})
+app.post('/createuser',jsonParser, function(req, res) { 
+  bcrypt.hash(req.body.password, saltRounds, function(err, hash) {
+    connection.query(
+      'INSERT INTO user(email,password,fname,lname,type) VALUES (?,?,?,?,?)',
+      [req.body.email,hash,req.body.fname,req.body.lname,req.body.type],
+      function(err, results, fields) {
+        console.log(results); // results contains rows returned by server
+        console.log(fields); // fields contains extra meta data about results, if available
+        if(err){
+          res.json({status:'error',message:err})
+          return
+  
+        }else{
+          res.json({status:'success',message:'usercreate success!'})
+          return
+        }
+        
+      }
+    );
+    // Store hash in your password DB.
+});
+})
+app.delete('/deleteuser',jsonParser,function(req,res) {
+ 
+  connection.query(
+    'DELETE FROM user WHERE user_id = ?',[req.body.id],
+    (err,results)=>{
+      console.log(results)
+      if(err) {
+        res.json({status:'error',message:err})
+        return
+        
+      }else{
+        res.json({status:'success',message:'delete success'})
+        return
+
+      }
+    }
+  );
+
+
+})
+app.put('/updateUser',jsonParser, function(req, res) { 
+  connection.query(
+    'UPDATE user SET email = ?,fname = ?,lname = ?,type = ? WHERE user_id = ? '  ,[req.body.email,req.body.fname,req.body.lname,req.body.type,req.body.id],
+    function(err, results, fields) {
+      console.log(results);
+        if(err){res.json({status:'error',message:err}); return }
+        if(results.length === 0){res.json({message : 'data not found'}); return }
+        else{
+          res.json({status:'success',message:'update success'})
+          return
+      }
+      }  
+  );
+})
+
 
 app.post('/authen',jsonParser, function (req, res, next) { 
   try {
@@ -82,6 +175,19 @@ app.post('/authen',jsonParser, function (req, res, next) {
   }
 
 });
+app.post('/user', function(req, res) { 
+  connection.query(
+    'SELECT * FROM `user`' ,
+    function(err, results, fields) {
+      console.log(results);
+        if(err){res.json({status:'error',message:err}); return }
+        if(results.length === 0){res.json({message : 'data not found'}); return }
+        res.send(results);
+      }  
+  );
+})
+
+
 
 app.listen(3333, function () {
   console.log('CORS-enabled web server listening on port 3333')
