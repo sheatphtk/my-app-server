@@ -32,6 +32,7 @@ const connection = mysql.createConnection({
   database: 'user_db'
 });
 app.post('/register',jsonParser, function (req, res, next) {
+  console.log(res)
   bcrypt.hash(req.body.password, saltRounds, function(err, hash) {
     connection.query(
       'INSERT INTO user(email,password,fname,lname) VALUES (?,?,?,?)',
@@ -44,13 +45,13 @@ app.post('/register',jsonParser, function (req, res, next) {
           return
   
         }else{
-          res.json({status:'insert success'})
+          res.json({status:'success',message:'register success'})
         }
         
       }
     );
-    // Store hash in your password DB.
-});
+  
+}); 
   
 })
 
@@ -77,6 +78,7 @@ app.post('/insertimg', upload.single('file'), (req, res)=>{
  
 
 })
+
 
 app.post('/createshop',jsonParser, function (req, res, next) {
  
@@ -113,7 +115,7 @@ app.post('/login',jsonParser, function (req, res, next) {
             res.json({status: 'ok', message : 'login success',token}) // ถ้า login success จะสร้าง token ขึ้นมา
             
           }else{
-            res.json({status: 'ok', message : 'login failed'})
+            res.json({status: 'error', message : 'login failed'})
 
           }
         });
@@ -185,6 +187,22 @@ app.get('/getuserbyid/:id', function(req, res) {
   const id = req.params.id;
   connection.query(
     'SELECT * FROM `user` WHERE user_id = ?' ,id,
+    function(err, results, fields) {
+      console.log(results);
+        if(err){res.json({status:'error',message:err}); return }
+        if(results.length === 0){res.json({message : 'data not found'}); return }
+        else{
+          res.json({status:'success',user:results})
+          return
+      }
+      }  
+  );
+})
+
+app.get('/getshopbyid/:id', function(req, res) { 
+  const id = req.params.id;
+  connection.query(
+    'SELECT * FROM `shop` WHERE shop_id = ?' ,id,
     function(err, results, fields) {
       console.log(results);
         if(err){res.json({status:'error',message:err}); return }
@@ -278,6 +296,26 @@ app.delete('/deleteshop',jsonParser,function(req,res) {
   connection.query(
     'DELETE FROM shop WHERE shop_id = ?',[req.body.id],
     (err,results)=>{
+      
+      if(err) {
+        res.json({status:'error',message:err})
+        return
+        
+      }else{
+        res.json({status:'success',message:'delete success'})
+        return
+
+      }
+    }
+  );
+})
+ //deletebannerByShopId
+ app.delete('/deletebannerByShopId',jsonParser,function(req,res) {
+  console.log('----------------------->')
+  console.log(req)
+  connection.query(
+    'DELETE FROM banner WHERE banner_shop_id = ?',[req.body.id],
+    (err,results)=>{
       console.log(results)
       if(err) {
         res.json({status:'error',message:err})
@@ -290,10 +328,7 @@ app.delete('/deleteshop',jsonParser,function(req,res) {
       }
     }
   );
-
-
 })
-
 app.delete('/deletebanner',jsonParser,function(req,res) {
  
   connection.query(
@@ -328,10 +363,49 @@ app.put('/updateUser',jsonParser, function(req, res) {
       }  
   );
 })
+app.put('/updateShop',jsonParser, function(req, res) { 
+  connection.query(
+    'UPDATE shop SET shop_name = ?,address = ?,shop_lat = ?,shop_lng = ? WHERE banner_id = ? '  ,[req.body.shop_name,req.body.shop_address,req.body.shop_lat,req.body.shop_lng,req.body.id],
+    function(err, results, fields) {
+      console.log(results);
+        if(err){res.json({status:'error',message:err}); return }
+        if(results.length === 0){res.json({message : 'data not found'}); return }
+        else{
+          res.json({status:'success',message:'update success'})
+          return
+      }
+      }  
+  );
+ 
+})
 
+app.put('/updateimg', upload.single('file'), (req, res)=>{
+  
+ 
+  console.log(req);
+  connection.query(
+    'UPDATE banner SET banner_name = ?,banner_shop_id = ? WHERE banner_id = ? ',
+    [req.file.filename,req.body.shopid,req.body.id],
+    function(err, results, fields) {
+      console.log(results); // results contains rows returned by server
+      console.log(fields); // fields contains extra meta data about results, if available
+      if(err){
+        res.json({status:'error',message:err})
+        return
 
-app.post('/authen',jsonParser, function (req, res, next) { 
-  try {
+      }else{
+        res.json({status:'update success'})
+      }
+      
+    }
+  );
+ 
+
+})
+
+app.post('/authen',jsonParser, function (req, res) { 
+
+ try {
     const token = req.headers.authorization.split(' ')[1]
     var decoded = jwt.verify(token,secret);
     res.json({status: 'ok',decoded})
