@@ -364,8 +364,9 @@ app.put('/updateUser',jsonParser, function(req, res) {
   );
 })
 app.put('/updateShop',jsonParser, function(req, res) { 
+  console.log(res)
   connection.query(
-    'UPDATE shop SET shop_name = ?,address = ?,shop_lat = ?,shop_lng = ? WHERE banner_id = ? '  ,[req.body.shop_name,req.body.shop_address,req.body.shop_lat,req.body.shop_lng,req.body.id],
+    'UPDATE shop SET shop_name = ?,address = ?,shop_lat = ?,shop_lng = ? WHERE shop_id = ? '  ,[req.body.shop_name,req.body.shop_address,req.body.shop_lat,req.body.shop_lng,req.body.id],
     function(err, results, fields) {
       console.log(results);
         if(err){res.json({status:'error',message:err}); return }
@@ -375,7 +376,7 @@ app.put('/updateShop',jsonParser, function(req, res) {
           return
       }
       }  
-  );
+  ); 
  
 })
 
